@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Traffic Violation Checker</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; }
+    header { background: #1a1a2e; color: white; padding: 18px 32px; font-size: 1.3rem; font-weight: 600; }
+    .container { max-width: 700px; margin: 40px auto; padding: 0 16px; }
+    .card { background: white; border-radius: 10px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 28px; }
+    h2 { font-size: 1.1rem; margin-bottom: 20px; color: #1a1a2e; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: #555; }
+    input, select { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; margin-bottom: 16px; }
+    input:focus, select:focus { outline: none; border-color: #4f46e5; }
+    button { width: 100%; padding: 12px; background: #4f46e5; color: white; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; font-weight: 600; }
+    button:hover { background: #4338ca; }
+    #result { margin-top: 18px; padding: 14px; border-radius: 6px; font-size: 0.95rem; display: none; }
+    .ok { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+    .violation { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th { background: #1a1a2e; color: white; padding: 10px 12px; text-align: left; }
+    td { padding: 9px 12px; border-bottom: 1px solid #eee; }
+    tr:hover td { background: #f9f9f9; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; }
+    .fine-high { background: #fee2e2; color: #991b1b; }
+    .fine-mid  { background: #fef3c7; color: #92400e; }
+    .fine-low  { background: #fde68a; color: #78350f; }
+    .empty { text-align: center; color: #aaa; padding: 20px; }
+  </style>
+</head>
+<body>
+  <header>🚦 Traffic Violation System</header>
+  <div class="container">
+
+    <div class="card">
+      <h2>Check Vehicle Speed</h2>
+      <label>Vehicle ID</label>
+      <input type="text" id="vehicleId" placeholder="e.g. MH12AB1234" />
+      <label>Speed (km/h)</label>
+      <input type="number" id="speed" placeholder="e.g. 95" min="0" />
+      <label>Zone</label>
+      <select id="zone">
+        <option value="highway">Highway</option>
+        <option value="city">City</option>
+        <option value="school">School Zone</option>
+        <option value="residential">Residential</option>
+      </select>
+      <button onclick="checkViolation()">Check Violation</button>
+      <div id="result"></div>
+    </div>
+
+    <div class="card">
+      <h2>Recent Violations</h2>
+      <table>
+        <thead>
+          <tr><th>Vehicle ID</th><th>Speed</th><th>Zone</th><th>Fine (₹)</th><th>Time</th></tr>
+        </thead>
+        <tbody id="violationsBody">
+          <tr><td colspan="5" class="empty">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script>
+    const BASE = '';
+
+    async function checkViolation() {
+      const vehicleId = document.getElementById('vehicleId').value.trim();
+      const speed = parseFloat(document.getElementById('speed').value);
+      const zone = document.getElementById('zone').value;
+      const resultEl = document.getElementById('result');
+
+      if (!vehicleId || isNaN(speed)) {
+        showResult('Please fill in all fields.', false);
+        return;
+      }
+
+      try {
+        const res = await fetch(`${BASE}/api/traffic/check`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vehicleId, speed, zone })
+        });
+        const data = await res.json();
+
+        if (typeof data === 'string') {
+          showResult('✅ ' + data, true);
+        } else {
+          showResult(`🚨 Violation! Fine: ₹${data.fine} | Speed: ${data.speed} km/h | Zone: ${data.zone}`, false);
+          loadViolations();
+        }
+      } catch (e) {
+        showResult('Error connecting to server.', false);
+      }
+    }
+
+    function showResult(msg, ok) {
+      const el = document.getElementById('result');
+      el.textContent = msg;
+      el.className = ok ? 'ok' : 'violation';
+      el.style.display = 'block';
+    }
+
+    async function loadViolations() {
+      try {
+        const res = await fetch(`${BASE}/api/traffic/violations`);
+        const data = await res.json();
+        const tbody = document.getElementById('violationsBody');
+
+        if (!data.length) {
+          tbody.innerHTML = '<tr><td colspan="5" class="empty">No violations recorded yet.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.slice().reverse().map(v => {
+          const fineClass = v.fine >= 5000 ? 'fine-high' : v.fine >= 2000 ? 'fine-mid' : 'fine-low';
+          const time = new Date(v.timestamp).toLocaleString();
+          return `<tr>
+            <td>${v.vehicleId}</td>
+            <td>${v.speed} km/h</td>
+            <td>${v.zone}</td>
+            <td><span class="badge ${fineClass}">₹${v.fine}</span></td>
+            <td>${time}</td>
+          </tr>`;
+        }).join('');
+      } catch (e) {
+        document.getElementById('violationsBody').innerHTML =
+          '<tr><td colspan="5" class="empty">Could not load violations.</td></tr>';
+      }
+    }
+
+    loadViolations();
+  </script>
+</body>
+</html>
