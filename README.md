@@ -2,6 +2,8 @@
 
 A full-stack Spring Boot + PostgreSQL application designed to manage and track traffic violations efficiently.
 Built with a focus on real-world deployment, scalability, and clean backend architecture.
+<img width="1918" height="870" alt="image" src="https://github.com/user-attachments/assets/ce167049-83f2-43af-8762-cfdfb3b6f6d3" />
+
 
 📌 Live Demo
 
