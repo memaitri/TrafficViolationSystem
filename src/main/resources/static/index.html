@@ -3,81 +3,464 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Traffic Violation Checker</title>
+  <title>Smart Traffic Violation System</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; }
-    header { background: #1a1a2e; color: white; padding: 18px 32px; font-size: 1.3rem; font-weight: 600; }
-    .container { max-width: 700px; margin: 40px auto; padding: 0 16px; }
-    .card { background: white; border-radius: 10px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 28px; }
-    h2 { font-size: 1.1rem; margin-bottom: 20px; color: #1a1a2e; }
-    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: #555; }
-    input, select { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; margin-bottom: 16px; }
-    input:focus, select:focus { outline: none; border-color: #4f46e5; }
-    button { width: 100%; padding: 12px; background: #4f46e5; color: white; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; font-weight: 600; }
-    button:hover { background: #4338ca; }
-    #result { margin-top: 18px; padding: 14px; border-radius: 6px; font-size: 0.95rem; display: none; }
-    .ok { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
-    .violation { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-    th { background: #1a1a2e; color: white; padding: 10px 12px; text-align: left; }
-    td { padding: 9px 12px; border-bottom: 1px solid #eee; }
-    tr:hover td { background: #f9f9f9; }
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; }
-    .fine-high { background: #fee2e2; color: #991b1b; }
-    .fine-mid  { background: #fef3c7; color: #92400e; }
-    .fine-low  { background: #fde68a; color: #78350f; }
-    .empty { text-align: center; color: #aaa; padding: 20px; }
+
+    body {
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(99,102,241,0.3);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+    }
+    .header-title { font-size: 1.1rem; font-weight: 700; color: #fff; }
+    .header-sub { font-size: 0.75rem; color: #a5b4fc; }
+    .live-badge {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(16,185,129,0.15);
+      border: 1px solid rgba(16,185,129,0.3);
+      padding: 4px 12px; border-radius: 20px;
+      font-size: 0.75rem; color: #34d399; font-weight: 600;
+    }
+    .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #34d399;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    /* ── Layout ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 32px 20px; }
+
+    /* ── Stats Row ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: linear-gradient(135deg, #1e1b4b, #1a1a2e);
+      border: 1px solid rgba(99,102,241,0.2);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex; align-items: center; gap: 14px;
+      transition: border-color 0.2s;
+    }
+    .stat-card:hover { border-color: rgba(99,102,241,0.5); }
+    .stat-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; flex-shrink: 0;
+    }
+    .stat-icon.purple { background: rgba(99,102,241,0.2); }
+    .stat-icon.red    { background: rgba(239,68,68,0.2); }
+    .stat-icon.green  { background: rgba(16,185,129,0.2); }
+    .stat-value { font-size: 1.6rem; font-weight: 700; color: #fff; line-height: 1; }
+    .stat-label { font-size: 0.75rem; color: #94a3b8; margin-top: 3px; }
+
+    /* ── Main Grid ── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: #1a1a2e;
+      border: 1px solid rgba(99,102,241,0.15);
+      border-radius: 14px;
+      padding: 28px;
+      transition: border-color 0.2s;
+    }
+    .card:hover { border-color: rgba(99,102,241,0.3); }
+    .card-title {
+      font-size: 0.95rem; font-weight: 700;
+      color: #c7d2fe; margin-bottom: 22px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card-title span { font-size: 1rem; }
+
+    /* ── Form ── */
+    .form-group { margin-bottom: 18px; }
+    label {
+      display: block; font-size: 0.78rem;
+      font-weight: 600; margin-bottom: 7px;
+      color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    input, select {
+      width: 100%; padding: 11px 14px;
+      background: #0f0f1a;
+      border: 1px solid rgba(99,102,241,0.25);
+      border-radius: 8px;
+      font-size: 0.92rem; color: #e2e8f0;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      font-family: inherit;
+    }
+    input::placeholder { color: #475569; }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+    select option { background: #1a1a2e; }
+
+    /* ── Speed Indicator ── */
+    .speed-indicator {
+      margin: 6px 0 18px;
+      height: 6px; border-radius: 3px;
+      background: #1e293b;
+      overflow: hidden;
+    }
+    .speed-bar {
+      height: 100%; border-radius: 3px;
+      width: 0%; transition: width 0.4s ease, background 0.4s ease;
+    }
+    .speed-hint {
+      font-size: 0.72rem; color: #64748b;
+      margin-top: 4px; text-align: right;
+    }
+
+    /* ── Button ── */
+    .btn {
+      width: 100%; padding: 13px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white; border: none; border-radius: 8px;
+      font-size: 0.95rem; cursor: pointer;
+      font-weight: 600; font-family: inherit;
+      transition: opacity 0.2s, transform 0.1s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Result ── */
+    #result {
+      margin-top: 16px; padding: 14px 16px;
+      border-radius: 10px; font-size: 0.9rem;
+      display: none; animation: slideIn 0.3s ease;
+      font-weight: 500;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .ok {
+      background: rgba(16,185,129,0.12);
+      color: #34d399;
+      border: 1px solid rgba(16,185,129,0.3);
+    }
+    .violation {
+      background: rgba(239,68,68,0.12);
+      color: #f87171;
+      border: 1px solid rgba(239,68,68,0.3);
+    }
+    .result-fine {
+      font-size: 1.4rem; font-weight: 700;
+      color: #f87171; margin-top: 6px;
+    }
+    .result-detail {
+      font-size: 0.8rem; color: #94a3b8; margin-top: 4px;
+    }
+
+    /* ── Zone Info ── */
+    .zone-info {
+      background: rgba(99,102,241,0.08);
+      border: 1px solid rgba(99,102,241,0.2);
+      border-radius: 8px; padding: 10px 14px;
+      font-size: 0.8rem; color: #a5b4fc;
+      margin-bottom: 18px;
+    }
+
+    /* ── Table ── */
+    .table-header {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 16px;
+    }
+    .refresh-btn {
+      background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      color: #a5b4fc; padding: 6px 14px;
+      border-radius: 6px; font-size: 0.78rem;
+      cursor: pointer; font-family: inherit;
+      transition: background 0.2s;
+    }
+    .refresh-btn:hover { background: rgba(99,102,241,0.25); }
+
+    .table-wrap { overflow-x: auto; border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    thead tr { background: rgba(99,102,241,0.1); }
+    th {
+      padding: 11px 14px; text-align: left;
+      font-size: 0.72rem; font-weight: 600;
+      color: #94a3b8; text-transform: uppercase;
+      letter-spacing: 0.05em; white-space: nowrap;
+    }
+    td { padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); color: #cbd5e1; }
+    tbody tr { transition: background 0.15s; }
+    tbody tr:hover td { background: rgba(99,102,241,0.06); }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .vehicle-id {
+      font-family: 'Courier New', monospace;
+      font-weight: 600; color: #e2e8f0;
+      background: rgba(99,102,241,0.1);
+      padding: 2px 8px; border-radius: 4px;
+      font-size: 0.82rem;
+    }
+    .speed-cell { font-weight: 600; }
+    .speed-over { color: #f87171; }
+    .speed-ok   { color: #34d399; }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 0.78rem; font-weight: 700;
+    }
+    .fine-high { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+    .fine-mid  { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+    .fine-low  { background: rgba(251,191,36,0.15); color: #fde68a; border: 1px solid rgba(251,191,36,0.3); }
+
+    .zone-tag {
+      display: inline-block; padding: 2px 8px;
+      border-radius: 4px; font-size: 0.75rem;
+      background: rgba(99,102,241,0.12);
+      color: #a5b4fc; text-transform: capitalize;
+    }
+    .time-cell { color: #64748b; font-size: 0.8rem; }
+
+    .empty {
+      text-align: center; color: #475569;
+      padding: 40px 20px; font-size: 0.88rem;
+    }
+    .empty-icon { font-size: 2rem; margin-bottom: 8px; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .stats-row { grid-template-columns: 1fr; }
+      header { padding: 0 16px; }
+      .container { padding: 20px 12px; }
+    }
   </style>
 </head>
 <body>
-  <header>🚦 Traffic Violation System</header>
+
+  <header>
+    <div class="header-left">
+      <div class="header-icon">🚦</div>
+      <div>
+        <div class="header-title">Smart Traffic System</div>
+        <div class="header-sub">Violation Detection & Management</div>
+      </div>
+    </div>
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      LIVE
+    </div>
+  </header>
+
   <div class="container">
 
-    <div class="card">
-      <h2>Check Vehicle Speed</h2>
-      <label>Vehicle ID</label>
-      <input type="text" id="vehicleId" placeholder="e.g. MH12AB1234" />
-      <label>Speed (km/h)</label>
-      <input type="number" id="speed" placeholder="e.g. 95" min="0" />
-      <label>Zone</label>
-      <select id="zone">
-        <option value="highway">Highway</option>
-        <option value="city">City</option>
-        <option value="school">School Zone</option>
-        <option value="residential">Residential</option>
-      </select>
-      <button onclick="checkViolation()">Check Violation</button>
-      <div id="result"></div>
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon purple">📋</div>
+        <div>
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-label">Total Violations</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon red">💰</div>
+        <div>
+          <div class="stat-value" id="stat-fines">—</div>
+          <div class="stat-label">Total Fines Collected</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">🏎️</div>
+        <div>
+          <div class="stat-value" id="stat-max">—</div>
+          <div class="stat-label">Highest Speed Recorded</div>
+        </div>
+      </div>
     </div>
 
-    <div class="card">
-      <h2>Recent Violations</h2>
-      <table>
-        <thead>
-          <tr><th>Vehicle ID</th><th>Speed</th><th>Zone</th><th>Fine (₹)</th><th>Time</th></tr>
-        </thead>
-        <tbody id="violationsBody">
-          <tr><td colspan="5" class="empty">Loading...</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <div class="main-grid">
 
+      <!-- Check Form -->
+      <div class="card">
+        <div class="card-title"><span>🔍</span> Check Vehicle Speed</div>
+
+        <div class="form-group">
+          <label>Vehicle ID</label>
+          <input type="text" id="vehicleId" placeholder="e.g. MH12AB1234"
+                 oninput="this.value = this.value.toUpperCase()" />
+        </div>
+
+        <div class="form-group">
+          <label>Speed (km/h)</label>
+          <input type="number" id="speed" placeholder="e.g. 95" min="0" max="300"
+                 oninput="updateSpeedBar(this.value)" />
+          <div class="speed-indicator">
+            <div class="speed-bar" id="speedBar"></div>
+          </div>
+          <div class="speed-hint" id="speedHint">Enter speed above</div>
+        </div>
+
+        <div class="form-group">
+          <label>Zone</label>
+          <select id="zone" onchange="updateZoneInfo()">
+            <option value="highway">🛣️ Highway</option>
+            <option value="city">🏙️ City</option>
+            <option value="school">🏫 School Zone</option>
+            <option value="residential">🏘️ Residential</option>
+          </select>
+        </div>
+
+        <div class="zone-info" id="zoneInfo">
+          ⚡ Speed limit info: Violations are recorded above 80 km/h
+        </div>
+
+        <button class="btn" onclick="checkViolation()" id="checkBtn">
+          <div class="spinner" id="spinner"></div>
+          <span id="btnText">⚡ Check Violation</span>
+        </button>
+
+        <div id="result"></div>
+      </div>
+
+      <!-- Violations Table -->
+      <div class="card">
+        <div class="table-header">
+          <div class="card-title" style="margin-bottom:0"><span>🚨</span> Recent Violations</div>
+          <button class="refresh-btn" onclick="loadViolations()">↻ Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Vehicle ID</th>
+                <th>Speed</th>
+                <th>Zone</th>
+                <th>Fine</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="violationsBody">
+              <tr><td colspan="5" class="empty">
+                <div class="empty-icon">⏳</div>Loading...
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
   </div>
 
   <script>
     const BASE = '';
 
+    const zoneMessages = {
+      highway:     '🛣️ Highway — General speed limit applies. Violations above 80 km/h.',
+      city:        '🏙️ City Zone — Urban area. Drive carefully. Violations above 80 km/h.',
+      school:      '🏫 School Zone — Children present. Extra caution required. Violations above 80 km/h.',
+      residential: '🏘️ Residential — Quiet neighborhood. Violations above 80 km/h.'
+    };
+
+    function updateZoneInfo() {
+      const zone = document.getElementById('zone').value;
+      document.getElementById('zoneInfo').textContent = zoneMessages[zone] || '';
+    }
+
+    function updateSpeedBar(val) {
+      const speed = parseFloat(val) || 0;
+      const pct = Math.min((speed / 200) * 100, 100);
+      const bar = document.getElementById('speedBar');
+      const hint = document.getElementById('speedHint');
+
+      bar.style.width = pct + '%';
+
+      if (speed === 0) {
+        bar.style.background = '#334155';
+        hint.textContent = 'Enter speed above';
+        hint.style.color = '#64748b';
+      } else if (speed <= 60) {
+        bar.style.background = '#34d399';
+        hint.textContent = '✅ Safe speed';
+        hint.style.color = '#34d399';
+      } else if (speed <= 80) {
+        bar.style.background = '#fbbf24';
+        hint.textContent = '⚠️ Approaching limit';
+        hint.style.color = '#fbbf24';
+      } else if (speed <= 100) {
+        bar.style.background = '#f97316';
+        hint.textContent = '🚨 Over limit — Fine: ₹1000';
+        hint.style.color = '#f97316';
+      } else if (speed <= 120) {
+        bar.style.background = '#ef4444';
+        hint.textContent = '🚨 Dangerous — Fine: ₹2000';
+        hint.style.color = '#ef4444';
+      } else {
+        bar.style.background = '#dc2626';
+        hint.textContent = '🚨 Extreme speed — Fine: ₹5000';
+        hint.style.color = '#dc2626';
+      }
+    }
+
     async function checkViolation() {
       const vehicleId = document.getElementById('vehicleId').value.trim();
       const speed = parseFloat(document.getElementById('speed').value);
       const zone = document.getElementById('zone').value;
-      const resultEl = document.getElementById('result');
 
-      if (!vehicleId || isNaN(speed)) {
-        showResult('Please fill in all fields.', false);
+      if (!vehicleId || isNaN(speed) || speed <= 0) {
+        showResult('error', '⚠️ Please fill in all fields correctly.');
         return;
       }
+
+      setLoading(true);
 
       try {
         const res = await fetch(`${BASE}/api/traffic/check`, {
@@ -88,21 +471,44 @@
         const data = await res.json();
 
         if (typeof data === 'string') {
-          showResult('✅ ' + data, true);
+          showResult('ok', `✅ No Violation Detected`, `Vehicle ${vehicleId} is within the speed limit at ${speed} km/h.`);
         } else {
-          showResult(`🚨 Violation! Fine: ₹${data.fine} | Speed: ${data.speed} km/h | Zone: ${data.zone}`, false);
+          showResult('violation',
+            `🚨 Violation Recorded!`,
+            `Vehicle: ${data.vehicleId} &nbsp;|&nbsp; Speed: ${data.speed} km/h &nbsp;|&nbsp; Zone: ${data.zone}`,
+            `₹${data.fine}`
+          );
           loadViolations();
         }
       } catch (e) {
-        showResult('Error connecting to server.', false);
+        showResult('error', '❌ Error connecting to server. Please try again.');
+      } finally {
+        setLoading(false);
       }
     }
 
-    function showResult(msg, ok) {
+    function setLoading(on) {
+      const btn = document.getElementById('checkBtn');
+      const spinner = document.getElementById('spinner');
+      const text = document.getElementById('btnText');
+      btn.disabled = on;
+      spinner.style.display = on ? 'block' : 'none';
+      text.textContent = on ? 'Checking...' : '⚡ Check Violation';
+    }
+
+    function showResult(type, title, detail = '', fine = '') {
       const el = document.getElementById('result');
-      el.textContent = msg;
-      el.className = ok ? 'ok' : 'violation';
       el.style.display = 'block';
+      el.className = type === 'ok' ? 'ok' : 'violation';
+
+      if (fine) {
+        el.innerHTML = `
+          <div>${title}</div>
+          <div class="result-fine">${fine}</div>
+          <div class="result-detail">${detail}</div>`;
+      } else {
+        el.innerHTML = `<div>${title}</div>${detail ? `<div class="result-detail">${detail}</div>` : ''}`;
+      }
     }
 
     async function loadViolations() {
@@ -111,28 +517,49 @@
         const data = await res.json();
         const tbody = document.getElementById('violationsBody');
 
+        updateStats(data);
+
         if (!data.length) {
-          tbody.innerHTML = '<tr><td colspan="5" class="empty">No violations recorded yet.</td></tr>';
+          tbody.innerHTML = `<tr><td colspan="5" class="empty">
+            <div class="empty-icon">🟢</div>No violations recorded yet.
+          </td></tr>`;
           return;
         }
 
         tbody.innerHTML = data.slice().reverse().map(v => {
           const fineClass = v.fine >= 5000 ? 'fine-high' : v.fine >= 2000 ? 'fine-mid' : 'fine-low';
-          const time = new Date(v.timestamp).toLocaleString();
+          const speedClass = v.speed > 80 ? 'speed-over' : 'speed-ok';
+          const time = new Date(v.timestamp).toLocaleString('en-IN', {
+            day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+          });
           return `<tr>
-            <td>${v.vehicleId}</td>
-            <td>${v.speed} km/h</td>
-            <td>${v.zone}</td>
+            <td><span class="vehicle-id">${v.vehicleId}</span></td>
+            <td class="speed-cell ${speedClass}">${v.speed} km/h</td>
+            <td><span class="zone-tag">${v.zone}</span></td>
             <td><span class="badge ${fineClass}">₹${v.fine}</span></td>
-            <td>${time}</td>
+            <td class="time-cell">${time}</td>
           </tr>`;
         }).join('');
       } catch (e) {
         document.getElementById('violationsBody').innerHTML =
-          '<tr><td colspan="5" class="empty">Could not load violations.</td></tr>';
+          `<tr><td colspan="5" class="empty">
+            <div class="empty-icon">⚠️</div>Could not load violations.
+          </td></tr>`;
       }
     }
 
+    function updateStats(data) {
+      document.getElementById('stat-total').textContent = data.length;
+      const totalFines = data.reduce((s, v) => s + v.fine, 0);
+      document.getElementById('stat-fines').textContent =
+        totalFines > 0 ? '₹' + totalFines.toLocaleString('en-IN') : '₹0';
+      const maxSpeed = data.length ? Math.max(...data.map(v => v.speed)) : 0;
+      document.getElementById('stat-max').textContent =
+        maxSpeed > 0 ? maxSpeed + ' km/h' : '—';
+    }
+
+    // Init
+    updateZoneInfo();
     loadViolations();
   </script>
 </body>
